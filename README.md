@@ -6,18 +6,20 @@ Although the plugin is designed to be used in Check_MK it is implemented as a NA
 
 #Installation Copy the plugin to /opt/omd/sites/{SITE NAME}/local/lib/nagios/plugins
 
-uusage: ecs.py [-h] -H HOSTNAME -u USERNAME -p PASSWORD [-d USE_DUMMY] [-c]
+usage: ecs.py [-h] -H HOSTNAME -u USERNAME -p PASSWORD [-d USE_DUMMY] [-c]
 
 optional arguments:
   -h, --help            show this help message and exit
   -H HOSTNAME, --hostname HOSTNAME
-                        hostname or IP address
+                        hostname or IP address with Port
   -u USERNAME, --username USERNAME
                         username
   -p PASSWORD, --password PASSWORD
                         user password
   -c, --config          build new metric config file
 
+Example:
+ecs.py -H 10.10.10.10:4443 -u root -p ChangeMe -c
 
 The plugin can be used to get capacity values for all bucktes within all namespaces . 
 
