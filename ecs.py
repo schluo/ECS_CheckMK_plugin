@@ -51,7 +51,7 @@ def get_argument():
         parser = argparse.ArgumentParser()
         parser.add_argument('-H', '--hostname',
                             type=str,
-                            help='hostname or IP address',
+                            help='hostname or IP address and Port',
                             required=True)
         parser.add_argument('-u', '--username',
                             type=str,
