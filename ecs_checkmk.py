@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 __author__    = "Oliver Schlueter"
-__copyright__ = "Copyright 2021, Dell Technologies"
+__copyright__ = "Copyright 2020, Dell Technologies"
 __license__   = "GPL"
 __version__   = "1.0.0"
 __email__     = "oliver.schlueter@dell.com"
@@ -44,7 +44,7 @@ def escape_ansi(line):
         return ansi_escape.sub('', str(line))
 
 def get_argument():
-    global hostaddress, user, password, create_config
+    global hostaddress, user, password, create_config, use_dummy
    
     try:
         # Setup argument parser
@@ -55,13 +55,18 @@ def get_argument():
                             required=True)
         parser.add_argument('-u', '--username',
                             type=str,
-                            help='username', dest='username',
+                            help='username',
                             required=True)
         parser.add_argument('-p', '--password',
                             type=str,
                             help='user password',
                             required=True)
+        parser.add_argument('-d', '--dummy', 
+                            type=str, 
+                            help='use dummy file',
+                            required=False, dest='use_dummy')
         parser.add_argument('-c', '--config', action='store_true', help='build new metric config file',required=False, dest='create_config')
+
         args = parser.parse_args()
 
     except KeyboardInterrupt:
@@ -72,6 +77,7 @@ def get_argument():
     user = args.username
     password = args.password
     create_config = args.create_config
+    use_dummy = args.use_dummy
 
 
 ###########################################
@@ -132,7 +138,7 @@ class ecs():
                         r = requests.get(url, verify=False, headers={"X-SDS-AUTH-TOKEN":ecs_token, "Accept":"application/json"})
                         bucket_billing = json.loads(r.content)
                         bucket_total_objects = bucket_billing["total_objects"]   
-                        bucket_total_size = float(bucket_billing["total_size"])*1024
+                        bucket_total_size = float(bucket_billing["total_size"])*1024*1024*1024
                         
                     # if not possible set values to zero
                     except:
@@ -152,26 +158,43 @@ class ecs():
         # initiate plugin output
         try:
             checkmk_output = "Bucket Data successful loaded at " + timestamp +" | "
-            check_mk_metric_conf = ""
+            checkmk_metric_conf = ""
             
             for bucket in ecs_results:
-                #print(bucket["namespace"] + "/" + bucket["name"], bucket["total_objects"], bucket["total_size"])
+              
+                # Capacity of buckets
+                metric_full_name = bucket["namespace"] + "-" + bucket["name"] + "_Capacity"                 
                 
-                metric_full_name = bucket["namespace"] + "/" + bucket["name"] + " Capacity"
-                 
                 #if command line option "-c" was set then create new metric config file
                 if create_config:
                     metric_unit = "bytes"
                 
                     # build diagram titles from metric keys
-                    check_mk_metric_conf += 'metric_info["' + metric_full_name +'"] = { ' + "\n" + \
-                        '    "title" : _("' + metric_full_name.title() + '"),' + "\n" + \
+                    checkmk_metric_conf += 'metric_info["' + metric_full_name +'"] = { ' + "\n" + \
+                        '    "title" : _("' + metric_full_name.title().replace("-","/").replace("_"," ") + '"),' + "\n" + \
                         '    "unit" : "'"bytes"'",' + "\n" + \
                         '    "color" : "' + self.random_color() + '",' + "\n" + \
                     '}' + "\n"
-                        
+                                
                 checkmk_output += "'" +  metric_full_name +"'=" + str(bucket["total_size"]) + ";;;; "
-            
+ 
+                # Object Number of buckets
+                metric_full_name = bucket["namespace"] + "-" + bucket["name"] + "_Objects"                 
+                
+                #if command line option "-c" was set then create new metric config file
+                if create_config:
+                    metric_unit = "count"
+                
+                    # build diagram titles from metric keys
+                    checkmk_metric_conf += 'metric_info["' + metric_full_name +'"] = { ' + "\n" + \
+                        '    "title" : _("' + metric_full_name.title().replace("-","/").replace("_"," ") + '"),' + "\n" + \
+                        '    "unit" : "'""'",' + "\n" + \
+                        '    "color" : "' + self.random_color() + '",' + "\n" + \
+                    '}' + "\n"
+                                
+                checkmk_output += "'" +  metric_full_name +"'=" + str(bucket["total_objects"]) + ";;;; "
+
+ 
             # print result to standard output
             print(checkmk_output)
 
@@ -179,7 +202,7 @@ class ecs():
             if create_config:
                 try:                                  
                     fobj = open(metric_config_file,"w")
-                    fobj.write(check_mk_metric_conf)
+                    fobj.write(checkmk_metric_conf)
                     fobj.close()
                 except Exception as err:
                     print(timestamp + ": Not able to write metric config file: " + str(err))
@@ -218,10 +241,13 @@ def main(argv=None):
         print("password: "+password)
     else:
         sys.tracebacklimit = 0
-
-    myecs = ecs()
-
-    myecs.process_results()
+    
+    if use_dummy != None:
+        print(use_dummy)
+    else:
+        myecs = ecs()    
+        myecs.process_results()
+        
 
 
 if __name__ == '__main__':
