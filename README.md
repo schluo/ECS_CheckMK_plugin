@@ -4,7 +4,7 @@ Plugin to integrate Dell EMC ECS Systems into Check_MK
 
 Although the plugin is designed to be used in Check_MK it is implemented as a NAGIOS plugin with Check_MK specific extentions. Thereofore it should be also possible to used it in NAGIOS.
 
-#Installation Copy the plugin to /opt/omd/sites/<SITE>/local/lib/nagios/plugins
+#Installation Copy the plugin to /opt/omd/sites/{SITE NAME}/local/lib/nagios/plugins
 
 uusage: ecs.py [-h] -H HOSTNAME -u USERNAME -p PASSWORD [-d USE_DUMMY] [-c]
 
